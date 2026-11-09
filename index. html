@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bloxly</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f2f4f7;color:#222}
+button,input{font:inherit}
+button{cursor:pointer;border:0;border-radius:8px;padding:12px;font-weight:bold}
+#auth{max-width:390px;margin:70px auto;padding:25px;background:white;border-radius:14px;text-align:center}
+.logo{font-size:34px;font-weight:900;color:#335fff}
+#auth input{width:100%;padding:14px;margin:7px 0;border:1px solid #ddd;border-radius:8px}
+.primary{background:#335fff;color:white;width:100%;margin-top:10px}
+.switch{background:none;color:#335fff}
+#error{color:#d33;font-size:13px}
+#app{display:none}
+header{height:60px;background:white;display:flex;align-items:center;padding:0 18px;gap:15px;border-bottom:1px solid #ddd;position:sticky;top:0;z-index:2}
+header .logo{font-size:25px}
+header input{flex:1;min-width:0;padding:10px;border:1px solid #ddd;border-radius:8px}
+header button{background:#eee}
+.layout{display:flex}
+aside{width:205px;padding:20px;background:white;min-height:calc(100vh - 60px)}
+aside button{display:block;width:100%;text-align:left;background:transparent;margin-bottom:7px}
+aside button:hover{background:#eee}
+main{padding:25px;flex:1;min-width:0}
+h2{margin-top:5px}
+.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:17px}
+.game{background:white;border-radius:12px;overflow:hidden;cursor:pointer}
+.game img{width:100%;aspect-ratio:1.4;object-fit:cover;background:#ddd}
+.game div{padding:12px;font-weight:bold}
+.game small{color:#777;font-weight:normal}
+.profile{background:white;border-radius:12px;padding:22px;display:flex;gap:15px;align-items:center}
+.avatar{width:65px;height:65px;border-radius:12px;background:#dce4ff;display:grid;place-items:center;font-size:35px}
+.verified{color:#168cff;font-weight:bold}
+#logout{margin-top:20px;background:#fee;color:#c33}
+@media(max-width:650px){
+aside{width:65px;padding:10px 5px}
+aside button{font-size:0;text-align:center;padding:14px 3px}
+aside button:first-letter{font-size:19px}
+main{padding:14px}
+.games{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+header{padding:0 10px;gap:8px}
+header .logo{font-size:21px}
+}
+</style>
+</head>
+<body>
+
+<section id="auth">
+  <div class="logo">Bloxly</div>
+  <h2 id="authTitle">Welcome to Bloxly</h2>
+  <p>Discover your next experience.</p>
+  <input id="username" placeholder="Username" maxlength="20">
+  <input id="password" type="password" placeholder="Password">
+  <p id="error"></p>
+  <button class="primary" onclick="authenticate()">Sign In</button>
+  <button class="switch" onclick="toggleAuth()">Create an account</button>
+</section>
+
+<div id="app">
+<header>
+  <div class="logo">Bloxly</div>
+  <input id="search" placeholder="Search experiences..." oninput="searchGames()">
+  <button onclick="logout()">Exit</button>
+</header>
+
+<div class="layout">
+<aside>
+  <button onclick="page('Home')">🏠 Home</button>
+  <button onclick="page('Discover')">🔎 Discover</button>
+  <button onclick="page('Avatar')">🧍 Avatar</button>
+  <button onclick="page('Marketplace')">🛍️ Marketplace</button>
+  <button onclick="page('Friends')">👥 Friends</button>
+  <button onclick="page('Profile')">👤 Profile</button>
+</aside>
+
+<main id="content"></main>
+</div>
+</div>
+
+<script>
+let signup=false;
+let currentUser="";
+
+function toggleAuth(){
+ signup=!signup;
+ document.getElementById("authTitle").textContent=signup?"Create your Bloxly account":"Welcome to Bloxly";
+ document.querySelector("#auth .primary").textContent=signup?"Sign Up":"Sign In";
+ document.querySelector(".switch").textContent=signup?"Already have an account? Sign In":"Create an account";
+ document.getElementById("error").textContent="";
+}
+
+function authenticate(){
+ const u=document.getElementById("username").value.trim();
+ const p=document.getElementById("password").value;
+ const error=document.getElementById("error");
+ if(u.length<3||p.length<6){error.textContent="Username must be 3+ characters and password 6+ characters.";return}
+ let users=JSON.parse(localStorage.getItem("bloxlyUsers")||"{}");
+ if(signup){
+  if(users[u]){error.textContent="Username already taken.";return}
+  users[u]=p;
+  localStorage.setItem("bloxlyUsers",JSON.stringify(users));
+ }else if(users[u]!==p){
+  error.textContent="Incorrect username or password.";
+  return;
+ }
+ currentUser=u;
+ document.getElementById("auth").style.display="none";
+ document.getElementById("app").style.display="block";
+ page("Home");
+}
+
+function logout(){
+ currentUser="";
+ document.getElementById("app").style.display="none";
+ document.getElementById("auth").style.display="block";
+}
+
+const games=[
+ ["Brookhaven","https://placehold.co/400x250/8ac7ff/172c4a?text=Brookhaven"],
+ ["Tower of Fun","https://placehold.co/400x250/bb9cff/24144c?text=Tower+of+Fun"],
+ ["Natural Disaster","https://placehold.co/400x250/ffb27e/522c16?text=Disaster"],
+ ["Adopt a Pet","https://placehold.co/400x250/9ce5b1/164b2c?text=Adopt+a+Pet"],
+ ["Speed Run","https://placehold.co/400x250/ffe38a/53400a?text=Speed+Run"],
+ ["City Life","https://placehold.co/400x250/aaaeea/24234c?text=City+Life"]
+];
+
+function showGames(list){
+ document.getElementById("gameList").innerHTML=list.map(g=>
+ `<div class="game" onclick="alert('Game coming soon!')">
+ <img src="${g[1]}" alt="">
+ <div>${g[0]}<br><small>Bloxly experience</small></div>
+ </div>`).join("");
+}
+
+function searchGames(){
+ const q=document.getElementById("search").value.toLowerCase();
+ showGames(games.filter(g=>g[0].toLowerCase().includes(q)));
+}
+
+function page(name){
+ const c=document.getElementById("content");
+ if(name==="Home"||name==="Discover"){
+ c.innerHTML=`<h2>${name}</h2><p>Discover experiences on Bloxly.</p><div class="games" id="gameList"></div>`;
+ showGames(games);
+ }else if(name==="Profile"){
+ c.innerHTML=`<h2>Your Profile</h2><div class="profile"><div class="avatar">😀</div><div><h2>${currentUser} ${currentUser.toLowerCase()==="founder" ? '<span class="verified">✓</span>':''}</h2><p>Welcome to Bloxly!</p></div></div>`;
+ }else{
+ c.innerHTML=`<h2>${name}</h2><p>Coming soon to Bloxly!</p>`;
+ }
+}
+</script>
+</body>
+</html>
